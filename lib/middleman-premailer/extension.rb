@@ -19,11 +19,17 @@ module MiddlemanPremailer
       # Call super to build options from the options_hash
       super
 
+      require 'premailer'
+
       app.after_build do |builder|
+        files = ::Middleman::Util.all_files_under(config[:build_dir])
+
+        options = extensions[:premailer].options
+
         files.each do |file|
           next unless file.extname == '.html'
 
-          premailer = Premailer.new(file.to_s, options.premailer_options)
+          premailer = ::Premailer.new(file.to_s, options.premailer_options)
 
           builder.thor.say_status :premailer, file.to_s
 
@@ -48,21 +54,25 @@ module MiddlemanPremailer
     end
 
     def manipulate_resource_list(resources)
-      res = []
+      if app.extensions[:premailer].options.plain_text
+        res = []
 
-      files = ::Middleman::Util.all_files_under(app.config[:build_dir])
+        files = ::Middleman::Util.all_files_under(app.config[:build_dir])
 
-      files.each do |file|
-        next unless file.extname == '.html'
+        files.each do |file|
+          next unless file.extname == '.html'
 
-        file_path = file.to_s.split('/')
-        file_path.shift
-        text_file = file_path.join('/').gsub('.html', '.txt')
+          file_path = file.to_s.split('/')
+          file_path.shift
+          text_file = file_path.join('/').gsub('.html', '.txt')
 
-        res << Middleman::Sitemap::Resource.new(app.sitemap, text_file, File.join(app.root, app.config[:build_dir], text_file))
+          res << Middleman::Sitemap::Resource.new(app.sitemap, text_file, File.join(app.root, app.config[:build_dir], text_file))
+        end
+
+        resources + res
+      else
+        resources
       end
-
-      resources + res
     end
   end
 end
