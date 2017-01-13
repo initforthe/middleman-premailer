@@ -66,7 +66,11 @@ module MiddlemanPremailer
           file_path.shift
           text_file = file_path.join('/').gsub('.html', '.txt')
 
-          res << Middleman::Sitemap::Resource.new(app.sitemap, text_file, File.join(app.root, app.config[:build_dir], text_file))
+          source_file = File.join(app.root, app.config[:build_dir], text_file)
+
+          if File.exist? source_file
+            res << Middleman::Sitemap::Resource.new(app.sitemap, text_file, source_file)
+          end
         end
 
         resources + res
